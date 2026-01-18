@@ -2,13 +2,7 @@ package org.teamck.villagerEnchantTracker.manager;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.BaseComponent;
-import org.teamck.villagerEnchantTracker.manager.EnchantmentManager;
 
 import java.io.File;
 import java.io.InputStream;
@@ -18,17 +12,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+/**
+ * Manages localized messages for the plugin
+ */
 public class MessageManager {
     private static MessageManager instance;
     private final JavaPlugin plugin;
     private final Map<String, YamlConfiguration> messages;
-    private static final String DEFAULT_VERSION = "0.1.0";
 
     public MessageManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -46,7 +41,8 @@ public class MessageManager {
         if (!localizationDir.exists()) {
             localizationDir.mkdirs();
         }
-        // 1. Find all resource language files (from plugin jar)
+        
+        // Extract default language files from plugin jar
         String[] defaultLangs = new String[]{"en", "ko"};
         for (String lang : defaultLangs) {
             File langFile = new File(localizationDir, lang + ".yml");
@@ -60,74 +56,70 @@ public class MessageManager {
                 }
             }
         }
-        // 2. Scan all *.yml files in localizationDir (including user-added languages)
+        
+        // Load all language files
         File[] langFiles = localizationDir.listFiles((dir, name) -> name.endsWith(".yml"));
         if (langFiles == null) return;
+        
         for (File langFile : langFiles) {
             String lang = langFile.getName().replaceFirst("\\.yml$", "");
             YamlConfiguration userConfig = YamlConfiguration.loadConfiguration(langFile);
             String userVersion = userConfig.getString("version", "");
-            String pluginVersion = null;
-            // Try to get plugin's resource version for this lang
-            try (InputStream resourceStream = plugin.getResource("localization/" + lang + ".yml")) {
-                if (resourceStream != null) {
-                    File tempFile = File.createTempFile("lang_resource_" + lang, ".yml");
-                    try (FileOutputStream tempOut = new FileOutputStream(tempFile)) {
-                        int b;
-                        while ((b = resourceStream.read()) != -1) {
-                            tempOut.write(b);
-                        }
-                    }
-                    YamlConfiguration resourceConfig = YamlConfiguration.loadConfiguration(tempFile);
-                    pluginVersion = resourceConfig.getString("version", "");
-                    tempFile.delete();
-                }
-            } catch (IOException ignored) {}
-            // 1. If plugin version is missing, just load user file
-            if (pluginVersion == null || pluginVersion.isEmpty()) {
-                messages.put(lang, userConfig);
-                checkConfigVersion(userConfig, langFile.getName());
-                continue;
+            String pluginVersion = getResourceVersion(lang);
+            
+            // Handle version comparison and updates
+            if (pluginVersion != null && !pluginVersion.isEmpty() && 
+                !pluginVersion.equals(userVersion) && compareVersion(pluginVersion, userVersion) > 0) {
+                // Backup and overwrite
+                backupAndReplaceLanguageFile(lang, langFile, localizationDir);
+                userConfig = YamlConfiguration.loadConfiguration(langFile);
             }
-            // 2. If plugin version == user version: do nothing (just load)
-            if (pluginVersion.equals(userVersion)) {
-                messages.put(lang, userConfig);
-                checkConfigVersion(userConfig, langFile.getName());
-                continue;
-            }
-            // 3. If plugin version > user version: backup and overwrite
-            if (compareVersion(pluginVersion, userVersion) > 0) {
-                // backup
-                String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                File backupFile = new File(localizationDir, lang + "_backup_" + timestamp + ".yml");
-                if (!langFile.renameTo(backupFile)) {
-                    plugin.getLogger().warning("Failed to backup " + lang + ".yml before overwrite.");
-                }
-                // overwrite
-                try (InputStream resourceStream = plugin.getResource("localization/" + lang + ".yml")) {
-                    if (resourceStream != null) {
-                        Files.copy(resourceStream, langFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    }
-                } catch (IOException e) {
-                    plugin.getLogger().warning("Failed to overwrite " + lang + ".yml: " + e.getMessage());
-                }
-                // reload
-                YamlConfiguration config = YamlConfiguration.loadConfiguration(langFile);
-                messages.put(lang, config);
-                checkConfigVersion(config, langFile.getName());
-                continue;
-            }
-            // 4. Otherwise (user version > plugin version): just load user file
+            
             messages.put(lang, userConfig);
-            checkConfigVersion(userConfig, langFile.getName());
         }
     }
 
-    // Returns 1 if v1 > v2, 0 if equal, -1 if v1 < v2 (semantic version, fallback to string compare)
+    private String getResourceVersion(String lang) {
+        try (InputStream resourceStream = plugin.getResource("localization/" + lang + ".yml")) {
+            if (resourceStream != null) {
+                File tempFile = File.createTempFile("lang_resource_" + lang, ".yml");
+                try (FileOutputStream tempOut = new FileOutputStream(tempFile)) {
+                    int b;
+                    while ((b = resourceStream.read()) != -1) {
+                        tempOut.write(b);
+                    }
+                }
+                YamlConfiguration resourceConfig = YamlConfiguration.loadConfiguration(tempFile);
+                String version = resourceConfig.getString("version", "");
+                tempFile.delete();
+                return version;
+            }
+        } catch (IOException ignored) {}
+        return null;
+    }
+
+    private void backupAndReplaceLanguageFile(String lang, File langFile, File localizationDir) {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        File backupFile = new File(localizationDir, lang + "_backup_" + timestamp + ".yml");
+        
+        if (!langFile.renameTo(backupFile)) {
+            plugin.getLogger().warning("Failed to backup " + lang + ".yml before overwrite.");
+        }
+        
+        try (InputStream resourceStream = plugin.getResource("localization/" + lang + ".yml")) {
+            if (resourceStream != null) {
+                Files.copy(resourceStream, langFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            plugin.getLogger().warning("Failed to overwrite " + lang + ".yml: " + e.getMessage());
+        }
+    }
+
     private int compareVersion(String v1, String v2) {
         String[] a1 = v1.split("[.-]");
         String[] a2 = v2.split("[.-]");
         int len = Math.max(a1.length, a2.length);
+        
         for (int i = 0; i < len; i++) {
             int n1 = i < a1.length ? parseIntOrZero(a1[i]) : 0;
             int n2 = i < a2.length ? parseIntOrZero(a2[i]) : 0;
@@ -135,30 +127,27 @@ public class MessageManager {
         }
         return 0;
     }
-    private int parseIntOrZero(String s) {
-        try { return Integer.parseInt(s); } catch (NumberFormatException e) { return 0; }
-    }
 
-    private void checkConfigVersion(YamlConfiguration config, String fileName) {
-        String fileVersion = config.getString("version", DEFAULT_VERSION);
-        String pluginVersion = plugin.getDescription().getVersion();
-        
-        if (!fileVersion.equals(pluginVersion)) {
-            plugin.getLogger().warning("Version mismatch in " + fileName + ": " +
-                "File version is " + fileVersion + " but plugin version is " + pluginVersion);
+    private int parseIntOrZero(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 
-    // Fallback-aware message retrieval
     private String getMessageInternal(String key, String language) {
         YamlConfiguration config = messages.get(language);
         if (config != null && config.contains(key)) {
             return config.getString(key);
         }
+        
+        // Fallback to English
         YamlConfiguration enConfig = messages.get("en");
         if (enConfig != null && enConfig.contains(key)) {
             return enConfig.getString(key);
         }
+        
         return key;
     }
 
@@ -175,7 +164,6 @@ public class MessageManager {
     }
 
     public String getEnchantName(String enchantId, String language) {
-        // Remove minecraft: prefix if present
         String key = enchantId;
         if (key.startsWith("minecraft:")) {
             key = key.substring("minecraft:".length());
@@ -192,46 +180,36 @@ public class MessageManager {
     }
 
     public String getEnchantIdFromLocalName(String localName, String language) {
-        plugin.getLogger().info("Searching for enchantment ID for name: " + localName + " in language: " + language);
-        
-        // First try to find enchantment by localized name
         String baseLanguage = getBaseLanguageCode(language);
         YamlConfiguration config = messages.get(baseLanguage);
+        
         if (config == null) {
-            plugin.getLogger().info("Language " + baseLanguage + " not found, using English");
-            config = messages.get("en"); // Use English as default
+            config = messages.get("en");
         }
 
-        // Get all enchantment entries
-        if (config.contains("enchantments")) {
-            plugin.getLogger().info("Found enchantments section in config");
+        // Search for enchantment by localized name
+        if (config != null && config.contains("enchantments")) {
             for (String key : config.getConfigurationSection("enchantments").getKeys(false)) {
                 String value = config.getString("enchantments." + key);
-                plugin.getLogger().info("Checking key: " + key + " with value: " + value);
-                if (value != null && value.equals(localName)) {
-                    plugin.getLogger().info("Found matching enchantment: " + key);
+                if (value != null && value.equalsIgnoreCase(localName)) {
                     return "minecraft:" + key;
                 }
             }
-        } else {
-            plugin.getLogger().info("No enchantments section found in config");
         }
         
-        // If not found by localized name, try as enchantment ID
+        // Try as enchantment ID
         String enchantId = localName;
-        // Remove enchantments. prefix if present
         if (enchantId.startsWith("enchantments.")) {
             enchantId = enchantId.substring("enchantments.".length());
         }
         if (!enchantId.startsWith("minecraft:")) {
             enchantId = "minecraft:" + enchantId;
         }
+        
         if (EnchantmentManager.getEnchant(enchantId) != null) {
-            plugin.getLogger().info("Found valid enchantment ID: " + enchantId);
             return enchantId;
         }
         
-        plugin.getLogger().info("No matching enchantment found");
         return null;
     }
 
@@ -239,11 +217,12 @@ public class MessageManager {
         List<String> names = new ArrayList<>();
         String baseLanguage = getBaseLanguageCode(language);
         YamlConfiguration config = messages.get(baseLanguage);
+        
         if (config == null) {
             config = messages.get("en");
         }
 
-        if (config.contains("enchantments")) {
+        if (config != null && config.contains("enchantments")) {
             for (String key : config.getConfigurationSection("enchantments").getKeys(false)) {
                 String value = config.getString("enchantments." + key);
                 if (value != null) {
@@ -253,13 +232,4 @@ public class MessageManager {
         }
         return names;
     }
-
-    public TextComponent createClickableMessage(String message, Location loc, String command, Player player) {
-        TextComponent textComponent = new TextComponent(message);
-        textComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, 
-                command + " " + loc.getX() + " " + loc.getY() + " " + loc.getZ()));
-        textComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, 
-                new BaseComponent[]{new TextComponent(getMessage("click_to_show_particles", player))}));
-        return textComponent;
-    }
-} 
+}

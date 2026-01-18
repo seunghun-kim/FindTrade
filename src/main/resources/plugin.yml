@@ -1,29 +1,24 @@
 name: VillagerEnchantTracker
-version: '0.3.0'
+version: '0.4.0'
 main: org.teamck.villagerEnchantTracker.core.VillagerEnchantTracker
 api-version: '1.21'
 softdepend: [WorldEdit, FastAsyncWorldEdit]
 commands:
-  findvillager:
-    description: Find nearby villagers with specific enchantments and mark them with particles
-    usage: /<command> <enchantment>
-    permission: villagerenchanttracker.use
-  vet:
-    description: Main command for VillagerEnchantTracker
+  findtrade:
+    description: Search for villager enchantment trades and manage regions
     usage: |
-      §6=== VillagerEnchantTracker Commands ===
-      §e/vet trade [create|search|list|delete|edit-description]
-      §e/vet region [create|list|delete|edit]
-      §e/vet evt [nearby|region]
-    permission: villagerenchanttracker.use
-    aliases: [villagerenchanttracker]
+      §6=== FindTrade Commands ===
+      §e/findtrade search <enchantment> §7- Search for villagers
+      §e/findtrade region [create|list|delete|edit] §7- Manage regions
+    permission: findtrade.use
+    aliases: [ft]
 
 permissions:
-  villagerenchanttracker.use:
-    description: Allows use of read-only features (search, list, etc)
+  findtrade.use:
+    description: Allows use of search and region list features
     default: true
-  villagerenchanttracker.write:
-    description: Allows use of write features (create, delete, edit, etc)
+  findtrade.write:
+    description: Allows creating, editing, and deleting regions
     default: op
     children:
-      villagerenchanttracker.use: true
+      findtrade.use: true

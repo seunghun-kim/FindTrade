@@ -7,8 +7,10 @@ import org.bukkit.entity.Villager;
 
 import java.util.UUID;
 
+/**
+ * Represents a villager trade for an enchantment book
+ */
 public class Trade {
-    private final int id;
     private final String villagerUuid;
     private final String enchantId;
     private final int level;
@@ -16,16 +18,7 @@ public class Trade {
     private final String description;
     private final String regionName;
 
-    public Trade(String villagerUuid, String enchantId, int level, int price, String description) {
-        this(0, villagerUuid, enchantId, level, price, description, null);
-    }
-
     public Trade(String villagerUuid, String enchantId, int level, int price, String description, String regionName) {
-        this(0, villagerUuid, enchantId, level, price, description, regionName);
-    }
-
-    public Trade(int id, String villagerUuid, String enchantId, int level, int price, String description, String regionName) {
-        this.id = id;
         this.villagerUuid = villagerUuid;
         this.enchantId = enchantId;
         this.level = level;
@@ -34,7 +27,6 @@ public class Trade {
         this.regionName = regionName;
     }
 
-    public int getId() { return id; }
     public String getVillagerUuid() { return villagerUuid; }
     public String getEnchantId() { return enchantId; }
     public int getLevel() { return level; }
@@ -54,4 +46,4 @@ public class Trade {
         Entity entity = Bukkit.getEntity(UUID.fromString(villagerUuid));
         return entity instanceof Villager villager ? villager : null;
     }
-} 
+}
