@@ -5,12 +5,14 @@ import org.teamck.villagerEnchantTracker.commands.FindTradeCommand;
 import org.teamck.villagerEnchantTracker.database.Database;
 import org.teamck.villagerEnchantTracker.database.SQLiteDatabase;
 import org.teamck.villagerEnchantTracker.manager.MessageManager;
+import org.teamck.villagerEnchantTracker.manager.PathfindingManager;
 
 import java.sql.SQLException;
 
 public final class VillagerEnchantTracker extends JavaPlugin {
     private Database db;
     private MessageManager messageManager;
+    private PathfindingManager pathfindingManager;
 
     @Override
     public void onEnable() {
@@ -21,9 +23,13 @@ public final class VillagerEnchantTracker extends JavaPlugin {
             // Initialize database and message manager
             this.db = new SQLiteDatabase(this);
             this.messageManager = new MessageManager(this);
+            
+            // Initialize pathfinding manager
+            this.pathfindingManager = new PathfindingManager(this);
+            this.pathfindingManager.initialize();
 
             // Register main findtrade command
-            FindTradeCommand findTradeCommand = new FindTradeCommand(this, messageManager, db);
+            FindTradeCommand findTradeCommand = new FindTradeCommand(this, messageManager, db, pathfindingManager);
             getCommand("findtrade").setExecutor(findTradeCommand);
             getCommand("findtrade").setTabCompleter(findTradeCommand);
 
@@ -35,6 +41,9 @@ public final class VillagerEnchantTracker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        // Shutdown pathfinding engine
+        if (pathfindingManager != null) {
+            pathfindingManager.shutdown();
+        }
     }
 }

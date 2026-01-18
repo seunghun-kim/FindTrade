@@ -20,6 +20,7 @@ import org.teamck.villagerEnchantTracker.database.Database;
 import org.teamck.villagerEnchantTracker.manager.EnchantmentManager;
 import org.teamck.villagerEnchantTracker.manager.MessageManager;
 import org.teamck.villagerEnchantTracker.manager.ParticleManager;
+import org.teamck.villagerEnchantTracker.manager.PathfindingManager;
 import org.teamck.villagerEnchantTracker.ui.RegionTUI;
 import org.teamck.villagerEnchantTracker.ui.SearchResultTUI;
 import org.teamck.villagerEnchantTracker.ui.TUISessionManager;
@@ -46,9 +47,10 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
     private static final double DEFAULT_SEARCH_RADIUS = 50.0;
     private static final List<String> SUBCOMMANDS = Arrays.asList("search", "region");
 
-    public FindTradeCommand(JavaPlugin plugin, MessageManager messageManager, Database db) {
+    public FindTradeCommand(JavaPlugin plugin, MessageManager messageManager, Database db, PathfindingManager pathfindingManager) {
         this.messageManager = messageManager;
         this.particleManager = new ParticleManager(plugin);
+        this.particleManager.setPathfindingManager(pathfindingManager);
         this.db = db;
         this.regionSubCommand = new RegionSubCommand(db, messageManager, plugin);
         this.tuiSessionManager = new TUISessionManager(messageManager, db);

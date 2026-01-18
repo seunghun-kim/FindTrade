@@ -1,30 +1,82 @@
-version: '0.3.0'
+version: '0.4.0'
 
-# Particle settings
-particles:
-  # Particle type, height, count
-  - type: "HAPPY_VILLAGER"
-    height: 20
-    count: 10
-  - type: "ENCHANT"
-    height: 20
-    count: 10
-  - type: "END_ROD"
-    height: 20
-    count: 5
-  - type: "DRAGON_BREATH"
-    height: 20
-    count: 5
-
-# Particle duration (seconds)
-particle-duration: 30
-
-# Particle spawn interval (seconds)
-particle-interval: 1
-
-# Particle effect settings
+# ===========================================
+# Particle Effects Configuration
+# ===========================================
 particle-effects:
-  show-pillar: true    # Show particle pillar at villager location
-  show-line: true      # Show particle line between player and villager
-  line-points: 20      # Number of points in the particle line
-  line-update-interval: 0.1  # Line update interval in seconds (0.1 = 5 ticks)
+  # How long particles are displayed (seconds)
+  duration: 30
+
+  # ===========================================
+  # Pillar Particle Settings
+  # ===========================================
+  # Particles displayed as a pillar above the villager's location
+  pillar:
+    # Enable/disable pillar effect
+    enabled: true
+    
+    # Spawn interval (seconds)
+    interval: 1
+    
+    # Pillar particle configurations
+    particles:
+      - type: "HAPPY_VILLAGER"
+        height: 20
+        count: 10
+      - type: "ENCHANT"
+        height: 20
+        count: 10
+      - type: "END_ROD"
+        height: 20
+        count: 5
+
+  # ===========================================
+  # Path Particle Settings
+  # ===========================================
+  # Particles displayed along the path between player and villager
+  path:
+    # Enable/disable path effect
+    enabled: true
+    
+    # ===========================================
+    # Pathfinding Options (A* Algorithm)
+    # ===========================================
+    # Set to 'true' to use A* pathfinding for realistic walkable paths
+    # Set to 'false' to use simple straight line (lower server load)
+    #
+    # NOTE: Pathfinding uses the Pathetic library which runs asynchronously.
+    # It's generally low-impact, but if you experience performance issues
+    # or prefer simpler visuals, set this to 'false'.
+    use-pathfinding: true
+    
+    # Number of points in the straight line (only used when use-pathfinding is false)
+    points: 20
+    
+    # How often to update the path particles (seconds)
+    # Lower = smoother but more frequent particle spawns
+    update-interval: 0.1
+    
+    # Path particle configurations
+    # You can specify multiple particle types with different settings
+    particles:
+      - type: "END_ROD"
+        count: 1
+        # Position offset from path point (blocks)
+        offset-x: 0.5
+        offset-y: 0.5
+        offset-z: 0.5
+        # Random spread for particle spawn position
+        randomness-x: 0.0
+        randomness-y: 0.0
+        randomness-z: 0.0
+        # Particle speed (0.0 = stationary)
+        speed: 0.0
+      - type: "ELECTRIC_SPARK"
+        count: 2
+        offset-x: 0.5
+        offset-y: 0.5
+        offset-z: 0.5
+        randomness-x: 0.1
+        randomness-y: 0.1
+        randomness-z: 0.1
+        speed: 0.02
