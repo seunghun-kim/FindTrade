@@ -7,6 +7,8 @@ invalid_subcommand: "§cInvalid subcommand."
 player_only: "§cThis command can only be used by players."
 click_to_show_particles: "§eClick to show particles at this location"
 no_active_search: "§cNo active search session. Use /findtrade search <enchantment> first."
+particles_off: "§aParticle effects have been turned off."
+no_active_particles: "§7No active particle effects to turn off."
 
 # Search command
 search_usage: "§eUsage: /findtrade search <enchantment>"
@@ -66,6 +68,8 @@ tui_nav_page: "§fPage §e%d§f/§e%d"
 tui_nav_next_active: "§a[Next ▶]"
 tui_nav_next_inactive: "§8[Next ▶]"
 tui_refresh: "§b[↻ Refresh]"
+tui_particles_off: "§c[✖ Particles Off]"
+tui_particles_off_hint: "§cClick to turn off all active particles"
 
 # Enchantment names
 enchantments:

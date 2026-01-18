@@ -30,8 +30,11 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0")
+    // Pathetic core library (https://github.com/bsommerfeld/pathetic)
+    // Using 5.4.0 to match pathetic-bukkit version
+    implementation("de.bsommerfeld.pathetic:api:5.4.0")
+    implementation("de.bsommerfeld.pathetic:engine:5.4.0")
     // Pathetic Bukkit implementation (https://github.com/bsommerfeld/pathetic-bukkit)
-    // Includes Bukkit-specific providers and environment context
     implementation("com.github.bsommerfeld.pathetic-bukkit:core:5.4.0")
     // Tinylog - required by Pathetic for logging
     implementation("org.tinylog:tinylog-api:2.7.0")
@@ -50,9 +53,9 @@ tasks {
         archiveClassifier.set('')
         
         // Relocate Pathetic to avoid conflicts with other plugins
-        relocate 'de.bsommerfeld.pathetic', 'org.teamck.villagerEnchantTracker.libs.pathetic'
+        relocate 'de.bsommerfeld.pathetic', 'org.teamck.findtrade.libs.pathetic'
         // Relocate tinylog to avoid conflicts
-        relocate 'org.tinylog', 'org.teamck.villagerEnchantTracker.libs.tinylog'
+        relocate 'org.tinylog', 'org.teamck.findtrade.libs.tinylog'
     }
     
     build {

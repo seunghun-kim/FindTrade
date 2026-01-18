@@ -1,4 +1,4 @@
-package org.teamck.villagerEnchantTracker.commands;
+package org.teamck.findtrade.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -14,16 +14,15 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.teamck.villagerEnchantTracker.core.Trade;
-import org.teamck.villagerEnchantTracker.core.VillagerRegion;
-import org.teamck.villagerEnchantTracker.database.Database;
-import org.teamck.villagerEnchantTracker.manager.EnchantmentManager;
-import org.teamck.villagerEnchantTracker.manager.MessageManager;
-import org.teamck.villagerEnchantTracker.manager.ParticleManager;
-import org.teamck.villagerEnchantTracker.manager.PathfindingManager;
-import org.teamck.villagerEnchantTracker.ui.RegionTUI;
-import org.teamck.villagerEnchantTracker.ui.SearchResultTUI;
-import org.teamck.villagerEnchantTracker.ui.TUISessionManager;
+import org.teamck.findtrade.core.Trade;
+import org.teamck.findtrade.core.VillagerRegion;
+import org.teamck.findtrade.database.Database;
+import org.teamck.findtrade.manager.EnchantmentManager;
+import org.teamck.findtrade.manager.MessageManager;
+import org.teamck.findtrade.manager.ParticleManager;
+import org.teamck.findtrade.ui.RegionTUI;
+import org.teamck.findtrade.ui.SearchResultTUI;
+import org.teamck.findtrade.ui.TUISessionManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +35,7 @@ import java.util.stream.Collectors;
  * - /findtrade search <enchantment> - Search for villagers selling enchantment books (TUI)
  * - /findtrade region [create|list|delete|edit] - Region CRUD operations (TUI)
  * - /findtrade particle <uuid> - Show particle effects on a villager (internal use)
+ * - /findtrade off - Cancel active particle effects
  */
 public class FindTradeCommand implements CommandExecutor, TabCompleter {
     private final MessageManager messageManager;
@@ -45,12 +45,11 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
     private final TUISessionManager tuiSessionManager;
     
     private static final double DEFAULT_SEARCH_RADIUS = 50.0;
-    private static final List<String> SUBCOMMANDS = Arrays.asList("search", "region");
+    private static final List<String> SUBCOMMANDS = Arrays.asList("search", "region", "off");
 
-    public FindTradeCommand(JavaPlugin plugin, MessageManager messageManager, Database db, PathfindingManager pathfindingManager) {
+    public FindTradeCommand(JavaPlugin plugin, MessageManager messageManager, Database db, ParticleManager particleManager) {
         this.messageManager = messageManager;
-        this.particleManager = new ParticleManager(plugin);
-        this.particleManager.setPathfindingManager(pathfindingManager);
+        this.particleManager = particleManager;
         this.db = db;
         this.regionSubCommand = new RegionSubCommand(db, messageManager, plugin);
         this.tuiSessionManager = new TUISessionManager(messageManager, db);
@@ -73,6 +72,7 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
             case "region" -> handleRegionCommand(sender, subArgs);
             case "region-tui" -> handleRegionTUI(sender, subArgs);
             case "particle" -> handleParticle(sender, subArgs);
+            case "off" -> handleOff(sender);
             default -> {
                 sendUsage(sender);
                 yield true;
@@ -84,6 +84,25 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§6=== FindTrade Commands ===");
         sender.sendMessage("§e/findtrade search <enchantment> §7- Search for villagers with enchantment");
         sender.sendMessage("§e/findtrade region §7- Manage regions (TUI)");
+        sender.sendMessage("§e/findtrade off §7- Turn off particle effects");
+    }
+    
+    /**
+     * Handle /findtrade off - Cancel all active particle effects
+     */
+    private boolean handleOff(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(messageManager.getMessage("player_only", sender));
+            return true;
+        }
+        
+        if (particleManager.hasActiveParticles(player)) {
+            particleManager.cancelAllParticles(player);
+            player.sendMessage(messageManager.getMessage("particles_off", player));
+        } else {
+            player.sendMessage(messageManager.getMessage("no_active_particles", player));
+        }
+        return true;
     }
 
     /**
@@ -377,9 +396,9 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
             Entity entity = Bukkit.getEntity(villagerUuid);
             
             if (entity instanceof Villager villager) {
-                // Cancel all previous particles and show new ones
+                // Cancel all previous particles and show new ones (tracks villager movement)
                 particleManager.cancelAllParticles(player);
-                particleManager.spawnParticles(villager.getLocation(), player, false);
+                particleManager.spawnParticlesForEntity(villagerUuid, player, false);
             } else {
                 player.sendMessage("§cVillager not found with UUID: " + args[0]);
             }

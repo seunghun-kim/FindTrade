@@ -4,7 +4,11 @@ version: '0.4.0'
 # Particle Effects Configuration
 # ===========================================
 particle-effects:
-  # How long particles are displayed (seconds)
+  # Persistent mode: particles stay until manually cancelled or player opens villager trade
+  # When false, particles disappear after 'duration' seconds
+  persistent: true
+  
+  # How long particles are displayed (seconds) - only used when persistent is false
   duration: 30
 
   # ===========================================
@@ -56,10 +60,15 @@ particle-effects:
     # Lower = smoother but more frequent particle spawns
     update-interval: 0.1
     
+    # How often to recalculate the path (seconds) - for persistent mode
+    # The path is recalculated from player's current position to target
+    # Set higher to reduce server load, lower for more accurate paths
+    refresh-interval: 1
+    
     # Path particle configurations
     # You can specify multiple particle types with different settings
     particles:
-      - type: "END_ROD"
+      - type: "ENCHANT"
         count: 1
         # Position offset from path point (blocks)
         offset-x: 0.5

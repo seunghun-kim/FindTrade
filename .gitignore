@@ -121,3 +121,5 @@ runs/
 mcserver-test/
 
 changes.patchpathetic-bukkit/
+pathetic-bukkit
+changes.patch

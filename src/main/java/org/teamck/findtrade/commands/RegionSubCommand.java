@@ -1,4 +1,4 @@
-package org.teamck.villagerEnchantTracker.commands;
+package org.teamck.findtrade.commands;
 
 import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -9,9 +9,9 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.teamck.villagerEnchantTracker.core.VillagerRegion;
-import org.teamck.villagerEnchantTracker.database.Database;
-import org.teamck.villagerEnchantTracker.manager.MessageManager;
+import org.teamck.findtrade.core.VillagerRegion;
+import org.teamck.findtrade.database.Database;
+import org.teamck.findtrade.manager.MessageManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;

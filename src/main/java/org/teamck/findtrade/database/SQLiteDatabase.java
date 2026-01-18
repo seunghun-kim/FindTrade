@@ -1,9 +1,9 @@
-package org.teamck.villagerEnchantTracker.database;
+package org.teamck.findtrade.database;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.teamck.villagerEnchantTracker.core.VillagerRegion;
+import org.teamck.findtrade.core.VillagerRegion;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -138,8 +138,8 @@ public class SQLiteDatabase implements Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
-    }
+            return false;
+        }
 
     /**
      * Helper method to parse VillagerRegion from ResultSet

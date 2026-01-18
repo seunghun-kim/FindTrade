@@ -1,4 +1,4 @@
-package org.teamck.villagerEnchantTracker.ui;
+package org.teamck.findtrade.ui;
 
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
@@ -6,8 +6,8 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.teamck.villagerEnchantTracker.core.Trade;
-import org.teamck.villagerEnchantTracker.manager.MessageManager;
+import org.teamck.findtrade.core.Trade;
+import org.teamck.findtrade.manager.MessageManager;
 
 import java.util.List;
 
@@ -142,6 +142,14 @@ public class SearchResultTUI {
         refresh.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, 
                 "/findtrade search-refresh"));
         navigation.addExtra(refresh);
+        
+        // Particles Off button
+        navigation.addExtra("  ");
+        TextComponent particlesOff = new TextComponent(messageManager.getMessage("tui_particles_off", player));
+        particlesOff.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/findtrade off"));
+        particlesOff.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new BaseComponent[]{new TextComponent(messageManager.getMessage("tui_particles_off_hint", player))}));
+        navigation.addExtra(particlesOff);
         
         player.spigot().sendMessage(navigation);
     }

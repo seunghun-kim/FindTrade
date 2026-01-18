@@ -7,6 +7,8 @@ invalid_subcommand: "§c잘못된 서브커맨드입니다."
 player_only: "§c이 명령어는 플레이어만 사용할 수 있습니다."
 click_to_show_particles: "§e클릭하여 이 위치에 파티클 표시"
 no_active_search: "§c활성화된 검색이 없습니다. /findtrade search <인챈트>로 먼저 검색하세요."
+particles_off: "§a파티클 효과가 꺼졌습니다."
+no_active_particles: "§7활성화된 파티클 효과가 없습니다."
 
 # Search command
 search_usage: "§e사용법: /findtrade search <인챈트>"
@@ -66,6 +68,8 @@ tui_nav_page: "§f페이지 §e%d§f/§e%d"
 tui_nav_next_active: "§a[다음 ▶]"
 tui_nav_next_inactive: "§8[다음 ▶]"
 tui_refresh: "§b[↻ 새로고침]"
+tui_particles_off: "§c[✖ 파티클 끄기]"
+tui_particles_off_hint: "§c클릭하여 모든 파티클 효과 끄기"
 
 # Enchantment names
 enchantments:

@@ -1,4 +1,4 @@
-package org.teamck.villagerEnchantTracker.manager;
+package org.teamck.findtrade.manager;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;

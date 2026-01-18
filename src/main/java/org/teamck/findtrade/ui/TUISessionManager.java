@@ -1,9 +1,9 @@
-package org.teamck.villagerEnchantTracker.ui;
+package org.teamck.findtrade.ui;
 
 import org.bukkit.entity.Player;
-import org.teamck.villagerEnchantTracker.core.Trade;
-import org.teamck.villagerEnchantTracker.database.Database;
-import org.teamck.villagerEnchantTracker.manager.MessageManager;
+import org.teamck.findtrade.core.Trade;
+import org.teamck.findtrade.database.Database;
+import org.teamck.findtrade.manager.MessageManager;
 
 import java.util.HashMap;
 import java.util.List;

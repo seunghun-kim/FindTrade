@@ -1,4 +1,4 @@
-package org.teamck.villagerEnchantTracker.core;
+package org.teamck.findtrade.core;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -68,4 +68,4 @@ public class VillagerRegion {
 
         return librarians;
     }
-} 
+}

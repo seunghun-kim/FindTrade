@@ -1,4 +1,4 @@
-# Villager Enchant Tracker
+# FindTrade
 
 A Minecraft plugin for finding villagers with specific enchantment trades using visual particle guidance.
 
@@ -7,7 +7,7 @@ A Minecraft plugin for finding villagers with specific enchantment trades using 
 ## Features
 
 - **Enchantment Search**: Find nearby villagers selling specific enchantment books
-- **A* Pathfinding**: Realistic walkable path visualization using the [pathetic-bukkit](https://github.com/bsommerfeld/pathetic-bukkit) library
+- **Pathfinding**: Realistic walkable path visualization using the [pathetic-bukkit](https://github.com/bsommerfeld/pathetic-bukkit) library
 - **Region Management**: Define regions to identify villager locations easily
 - **Interactive TUI**: Text-based user interface for search results and region management
 - **Customizable Particles**: Configure multiple particle types for pillar and path effects
@@ -40,7 +40,7 @@ Opens the region management TUI for creating, editing, and deleting regions.
 
 ## Configuration
 
-The configuration file is located at `plugins/VillagerEnchantTracker/config.yml`.
+The configuration file is located at `plugins/FindTrade/config.yml`.
 
 ### Particle Effects
 
@@ -83,7 +83,7 @@ The plugin uses A* pathfinding to show realistic walkable paths. This runs async
 
 ## Localization
 
-Language files are located in `plugins/VillagerEnchantTracker/localization/`. Supported languages:
+Language files are located in `plugins/FindTrade/localization/`. Supported languages:
 - English (`en.yml`)
 - Korean (`ko.yml`)
 

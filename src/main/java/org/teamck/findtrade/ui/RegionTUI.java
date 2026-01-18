@@ -1,13 +1,13 @@
-package org.teamck.villagerEnchantTracker.ui;
+package org.teamck.findtrade.ui;
 
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.BaseComponent;
 import org.bukkit.entity.Player;
-import org.teamck.villagerEnchantTracker.core.VillagerRegion;
-import org.teamck.villagerEnchantTracker.database.Database;
-import org.teamck.villagerEnchantTracker.manager.MessageManager;
+import org.teamck.findtrade.core.VillagerRegion;
+import org.teamck.findtrade.database.Database;
+import org.teamck.findtrade.manager.MessageManager;
 
 import java.util.List;
 
