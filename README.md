@@ -2,7 +2,7 @@
 
 A Minecraft plugin for finding villagers with specific enchantment trades using visual particle guidance.
 
-![Demo Video](https://github.com/user-attachments/assets/4098bd03-362b-4079-b558-4b7bf99ae9cc)
+[![Video Title](https://img.youtube.com/vi/Sbt-IjB3o1A/0.jpg)](https://www.youtube.com/watch?v=Sbt-IjB3o1A)
 
 ## Features
 
