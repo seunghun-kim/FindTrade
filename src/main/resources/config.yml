@@ -89,3 +89,46 @@ particle-effects:
         randomness-y: 0.1
         randomness-z: 0.1
         speed: 0.02
+    
+    # ===========================================
+    # Moving Highlight Particle Settings
+    # ===========================================
+    # A special particle that moves along the path to indicate direction
+    # It travels from player to villager repeatedly
+    highlight:
+      # Enable/disable moving highlight
+      enabled: false
+      
+      # Movement speed (blocks per second)
+      speed: 10.0
+      
+      # Interval between multiple highlights (blocks)
+      # Multiple highlight particles will be spawned at this interval
+      # Set to 0 for a single highlight only
+      # Example: 15 means highlights spawn every 15 blocks along the path
+      spawn-interval: 15.0
+      
+      # How often to update highlight position (seconds)
+      # Lower = smoother movement but more particle spawns
+      tick-interval: 0.05
+      
+      # Highlight particle configurations
+      particles:
+        - type: "HAPPY_VILLAGER"
+          count: 3
+          offset-x: 0.5
+          offset-y: 0.5
+          offset-z: 0.5
+          randomness-x: 0.2
+          randomness-y: 0.2
+          randomness-z: 0.2
+          speed: 0.0
+        - type: "COMPOSTER"
+          count: 5
+          offset-x: 0.5
+          offset-y: 0.5
+          offset-z: 0.5
+          randomness-x: 0.3
+          randomness-y: 0.3
+          randomness-z: 0.3
+          speed: 1

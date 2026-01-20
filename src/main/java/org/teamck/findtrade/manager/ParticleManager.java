@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +24,8 @@ public class ParticleManager {
     private final Map<Player, List<Location>> pathCache;
     private final Map<Player, Location> targetLocations;  // Static target location (fallback)
     private final Map<Player, UUID> targetEntities;  // Dynamic target entity UUID
+    private final Map<Player, Double> highlightProgress;  // Current highlight position (distance traveled)
+    private final Map<Player, List<Double>> pathDistances;  // Cumulative distances along path
     private PathfindingManager pathfindingManager;
 
     public ParticleManager(JavaPlugin plugin) {
@@ -31,6 +34,8 @@ public class ParticleManager {
         this.pathCache = new HashMap<>();
         this.targetLocations = new HashMap<>();
         this.targetEntities = new HashMap<>();
+        this.highlightProgress = new HashMap<>();
+        this.pathDistances = new HashMap<>();
     }
 
     /**
@@ -65,6 +70,8 @@ public class ParticleManager {
         pathCache.remove(player);
         targetLocations.remove(player);
         targetEntities.remove(player);
+        highlightProgress.remove(player);
+        pathDistances.remove(player);
     }
 
     private void removeTask(Player player, BukkitTask task) {
@@ -114,8 +121,16 @@ public class ParticleManager {
             
             if (usePathfinding && pathfindingManager != null && pathfindingManager.isAvailable()) {
                 spawnPathEffectForEntity(player, entityUuid, persistent, duration);
+                // Moving highlight (only with pathfinding - needs path data)
+                if (plugin.getConfig().getBoolean("particle-effects.path.highlight.enabled", true)) {
+                    spawnPathHighlightEffectForEntity(player, entityUuid, persistent, duration);
+                }
             } else {
                 spawnStraightPathEffectForEntity(player, entityUuid, persistent, duration);
+                // Moving highlight for straight line
+                if (plugin.getConfig().getBoolean("particle-effects.path.highlight.enabled", true)) {
+                    spawnStraightHighlightEffectForEntity(player, entityUuid, persistent, duration);
+                }
             }
         }
     }
@@ -148,9 +163,17 @@ public class ParticleManager {
             if (usePathfinding && pathfindingManager != null && pathfindingManager.isAvailable()) {
                 // Use pathfinding for realistic path
                 spawnPathEffect(player, loc, persistent, duration);
+                // Moving highlight (only with pathfinding - needs path data)
+                if (plugin.getConfig().getBoolean("particle-effects.path.highlight.enabled", true)) {
+                    spawnPathHighlightEffect(player, persistent, duration);
+                }
             } else {
                 // Fallback to straight path
                 spawnStraightPathEffect(player, loc, persistent, duration);
+                // Moving highlight for straight line
+                if (plugin.getConfig().getBoolean("particle-effects.path.highlight.enabled", true)) {
+                    spawnStraightHighlightEffect(player, persistent, duration);
+                }
             }
         }
     }
@@ -320,6 +343,8 @@ public class ParticleManager {
         pathfindingManager.findPath(player.getLocation(), target, path -> {
             if (path != null && !path.isEmpty()) {
                 pathCache.put(player, path);
+                // Invalidate distance cache so it gets recalculated
+                pathDistances.remove(player);
             }
         });
     }
@@ -384,6 +409,347 @@ public class ParticleManager {
         
         if (!persistent) {
             scheduleCancel(player, pathTask, duration, true);
+        }
+    }
+
+    /**
+     * Calculate cumulative distances along a path for interpolation
+     */
+    private List<Double> calculatePathDistances(List<Location> path) {
+        List<Double> distances = new ArrayList<>();
+        double cumulative = 0.0;
+        distances.add(0.0);
+        
+        for (int i = 1; i < path.size(); i++) {
+            cumulative += path.get(i - 1).distance(path.get(i));
+            distances.add(cumulative);
+        }
+        return distances;
+    }
+
+    /**
+     * Get total path length from distances list
+     */
+    private double getTotalPathLength(List<Double> distances) {
+        if (distances == null || distances.isEmpty()) return 0.0;
+        return distances.get(distances.size() - 1);
+    }
+
+    /**
+     * Interpolate location along path at given distance
+     */
+    private Location interpolatePathLocation(List<Location> path, List<Double> distances, double targetDistance) {
+        if (path == null || path.isEmpty() || distances == null || distances.isEmpty()) {
+            return null;
+        }
+        
+        double totalLength = getTotalPathLength(distances);
+        if (totalLength <= 0) return path.get(0).clone();
+        
+        // Clamp to valid range
+        targetDistance = Math.max(0, Math.min(targetDistance, totalLength));
+        
+        // Find segment containing target distance
+        for (int i = 1; i < distances.size(); i++) {
+            if (distances.get(i) >= targetDistance) {
+                double segmentStart = distances.get(i - 1);
+                double segmentEnd = distances.get(i);
+                double segmentLength = segmentEnd - segmentStart;
+                
+                if (segmentLength <= 0) return path.get(i - 1).clone();
+                
+                double ratio = (targetDistance - segmentStart) / segmentLength;
+                Location start = path.get(i - 1);
+                Location end = path.get(i);
+                
+                return new Location(
+                    start.getWorld(),
+                    start.getX() + (end.getX() - start.getX()) * ratio,
+                    start.getY() + (end.getY() - start.getY()) * ratio,
+                    start.getZ() + (end.getZ() - start.getZ()) * ratio
+                );
+            }
+        }
+        
+        return path.get(path.size() - 1).clone();
+    }
+
+    /**
+     * Spawn moving highlight particles along the path (static target)
+     */
+    private void spawnPathHighlightEffect(Player player, boolean persistent, int duration) {
+        double speed = plugin.getConfig().getDouble("particle-effects.path.highlight.speed", 10.0);
+        double spawnInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.spawn-interval", 15.0);
+        double tickInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.tick-interval", 0.05);
+        List<Map<?, ?>> highlightConfigs = plugin.getConfig().getMapList("particle-effects.path.highlight.particles");
+        
+        // Initialize progress
+        highlightProgress.put(player, 0.0);
+        
+        BukkitTask highlightTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            List<Location> path = pathCache.get(player);
+            if (path == null || path.isEmpty()) return;
+            
+            // Calculate distances if not cached or path changed
+            List<Double> distances = pathDistances.get(player);
+            if (distances == null || distances.size() != path.size()) {
+                distances = calculatePathDistances(path);
+                pathDistances.put(player, distances);
+            }
+            
+            double totalLength = getTotalPathLength(distances);
+            if (totalLength <= 0) return;
+            
+            // Get current progress and advance
+            double progress = highlightProgress.getOrDefault(player, 0.0);
+            progress += speed * tickInterval;
+            
+            // Reset when completing a full cycle
+            if (spawnInterval > 0 && progress >= spawnInterval) {
+                progress = progress % spawnInterval;
+            } else if (progress >= totalLength) {
+                progress = 0.0;
+            }
+            highlightProgress.put(player, progress);
+            
+            // Spawn multiple highlights at regular intervals
+            if (spawnInterval > 0) {
+                for (double pos = progress; pos < totalLength; pos += spawnInterval) {
+                    Location highlightLoc = interpolatePathLocation(path, distances, pos);
+                    if (highlightLoc != null) {
+                        spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+                    }
+                }
+            } else {
+                // Single highlight mode
+                Location highlightLoc = interpolatePathLocation(path, distances, progress);
+                if (highlightLoc != null) {
+                    spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+                }
+            }
+        }, 0L, (long)(tickInterval * 20L));
+        
+        activeTasks.computeIfAbsent(player, k -> new HashSet<>()).add(highlightTask);
+        
+        if (!persistent) {
+            scheduleCancel(player, highlightTask, duration, false);
+        }
+    }
+
+    /**
+     * Spawn moving highlight particles along the path (follows entity)
+     */
+    private void spawnPathHighlightEffectForEntity(Player player, UUID entityUuid, boolean persistent, int duration) {
+        double speed = plugin.getConfig().getDouble("particle-effects.path.highlight.speed", 10.0);
+        double spawnInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.spawn-interval", 15.0);
+        double tickInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.tick-interval", 0.05);
+        List<Map<?, ?>> highlightConfigs = plugin.getConfig().getMapList("particle-effects.path.highlight.particles");
+        
+        // Initialize progress
+        highlightProgress.put(player, 0.0);
+        
+        BukkitTask highlightTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            List<Location> path = pathCache.get(player);
+            if (path == null || path.isEmpty()) return;
+            
+            // Calculate distances if not cached or path changed
+            List<Double> distances = pathDistances.get(player);
+            if (distances == null || distances.size() != path.size()) {
+                distances = calculatePathDistances(path);
+                pathDistances.put(player, distances);
+            }
+            
+            double totalLength = getTotalPathLength(distances);
+            if (totalLength <= 0) return;
+            
+            // Get current progress and advance
+            double progress = highlightProgress.getOrDefault(player, 0.0);
+            progress += speed * tickInterval;
+            
+            // Reset when completing a full cycle
+            if (spawnInterval > 0 && progress >= spawnInterval) {
+                progress = progress % spawnInterval;
+            } else if (progress >= totalLength) {
+                progress = 0.0;
+            }
+            highlightProgress.put(player, progress);
+            
+            // Spawn multiple highlights at regular intervals
+            if (spawnInterval > 0) {
+                for (double pos = progress; pos < totalLength; pos += spawnInterval) {
+                    Location highlightLoc = interpolatePathLocation(path, distances, pos);
+                    if (highlightLoc != null) {
+                        spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+                    }
+                }
+            } else {
+                // Single highlight mode
+                Location highlightLoc = interpolatePathLocation(path, distances, progress);
+                if (highlightLoc != null) {
+                    spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+                }
+            }
+        }, 0L, (long)(tickInterval * 20L));
+        
+        activeTasks.computeIfAbsent(player, k -> new HashSet<>()).add(highlightTask);
+        
+        if (!persistent) {
+            scheduleCancel(player, highlightTask, duration, false);
+        }
+    }
+
+    /**
+     * Spawn moving highlight for straight line path (static target)
+     */
+    private void spawnStraightHighlightEffect(Player player, boolean persistent, int duration) {
+        double speed = plugin.getConfig().getDouble("particle-effects.path.highlight.speed", 10.0);
+        double spawnInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.spawn-interval", 15.0);
+        double tickInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.tick-interval", 0.05);
+        List<Map<?, ?>> highlightConfigs = plugin.getConfig().getMapList("particle-effects.path.highlight.particles");
+        
+        // Initialize progress
+        highlightProgress.put(player, 0.0);
+        
+        BukkitTask highlightTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            Location target = targetLocations.get(player);
+            if (target == null) return;
+            
+            Location start = player.getLocation();
+            double totalLength = start.distance(target);
+            if (totalLength <= 0) return;
+            
+            // Get current progress and advance
+            double progress = highlightProgress.getOrDefault(player, 0.0);
+            progress += speed * tickInterval;
+            
+            // Reset when completing a full cycle
+            if (spawnInterval > 0 && progress >= spawnInterval) {
+                progress = progress % spawnInterval;
+            } else if (progress >= totalLength) {
+                progress = 0.0;
+            }
+            highlightProgress.put(player, progress);
+            
+            // Spawn multiple highlights at regular intervals
+            if (spawnInterval > 0) {
+                for (double pos = progress; pos < totalLength; pos += spawnInterval) {
+                    double ratio = pos / totalLength;
+                    Location highlightLoc = new Location(
+                        start.getWorld(),
+                        start.getX() + (target.getX() - start.getX()) * ratio,
+                        start.getY() + (target.getY() - start.getY()) * ratio,
+                        start.getZ() + (target.getZ() - start.getZ()) * ratio
+                    );
+                    spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+                }
+            } else {
+                // Single highlight mode
+                double ratio = progress / totalLength;
+                Location highlightLoc = new Location(
+                    start.getWorld(),
+                    start.getX() + (target.getX() - start.getX()) * ratio,
+                    start.getY() + (target.getY() - start.getY()) * ratio,
+                    start.getZ() + (target.getZ() - start.getZ()) * ratio
+                );
+                spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+            }
+        }, 0L, (long)(tickInterval * 20L));
+        
+        activeTasks.computeIfAbsent(player, k -> new HashSet<>()).add(highlightTask);
+        
+        if (!persistent) {
+            scheduleCancel(player, highlightTask, duration, false);
+        }
+    }
+
+    /**
+     * Spawn moving highlight for straight line path (follows entity)
+     */
+    private void spawnStraightHighlightEffectForEntity(Player player, UUID entityUuid, boolean persistent, int duration) {
+        double speed = plugin.getConfig().getDouble("particle-effects.path.highlight.speed", 10.0);
+        double spawnInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.spawn-interval", 15.0);
+        double tickInterval = plugin.getConfig().getDouble("particle-effects.path.highlight.tick-interval", 0.05);
+        List<Map<?, ?>> highlightConfigs = plugin.getConfig().getMapList("particle-effects.path.highlight.particles");
+        
+        // Initialize progress
+        highlightProgress.put(player, 0.0);
+        
+        BukkitTask highlightTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            Entity entity = plugin.getServer().getEntity(entityUuid);
+            if (entity == null || !entity.isValid()) return;
+            
+            Location target = entity.getLocation();
+            Location start = player.getLocation();
+            double totalLength = start.distance(target);
+            if (totalLength <= 0) return;
+            
+            // Get current progress and advance
+            double progress = highlightProgress.getOrDefault(player, 0.0);
+            progress += speed * tickInterval;
+            
+            // Reset when completing a full cycle
+            if (spawnInterval > 0 && progress >= spawnInterval) {
+                progress = progress % spawnInterval;
+            } else if (progress >= totalLength) {
+                progress = 0.0;
+            }
+            highlightProgress.put(player, progress);
+            
+            // Spawn multiple highlights at regular intervals
+            if (spawnInterval > 0) {
+                for (double pos = progress; pos < totalLength; pos += spawnInterval) {
+                    double ratio = pos / totalLength;
+                    Location highlightLoc = new Location(
+                        start.getWorld(),
+                        start.getX() + (target.getX() - start.getX()) * ratio,
+                        start.getY() + (target.getY() - start.getY()) * ratio,
+                        start.getZ() + (target.getZ() - start.getZ()) * ratio
+                    );
+                    spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+                }
+            } else {
+                // Single highlight mode
+                double ratio = progress / totalLength;
+                Location highlightLoc = new Location(
+                    start.getWorld(),
+                    start.getX() + (target.getX() - start.getX()) * ratio,
+                    start.getY() + (target.getY() - start.getY()) * ratio,
+                    start.getZ() + (target.getZ() - start.getZ()) * ratio
+                );
+                spawnHighlightParticlesAtLocation(player, highlightLoc, highlightConfigs);
+            }
+        }, 0L, (long)(tickInterval * 20L));
+        
+        activeTasks.computeIfAbsent(player, k -> new HashSet<>()).add(highlightTask);
+        
+        if (!persistent) {
+            scheduleCancel(player, highlightTask, duration, false);
+        }
+    }
+
+    /**
+     * Spawn highlight particles at given location
+     */
+    private void spawnHighlightParticlesAtLocation(Player player, Location baseLocation, List<Map<?, ?>> particleConfigs) {
+        for (Map<?, ?> config : particleConfigs) {
+            try {
+                String type = (String) config.get("type");
+                Particle particle = Particle.valueOf(type);
+                
+                int count = getConfigInt(config, "count", 3);
+                double offsetX = getConfigDouble(config, "offset-x", 0.5);
+                double offsetY = getConfigDouble(config, "offset-y", 0.5);
+                double offsetZ = getConfigDouble(config, "offset-z", 0.5);
+                double randomX = getConfigDouble(config, "randomness-x", 0.2);
+                double randomY = getConfigDouble(config, "randomness-y", 0.2);
+                double randomZ = getConfigDouble(config, "randomness-z", 0.2);
+                double speed = getConfigDouble(config, "speed", 0.0);
+                
+                Location spawnLoc = baseLocation.clone().add(offsetX, offsetY, offsetZ);
+                player.spawnParticle(particle, spawnLoc, count, randomX, randomY, randomZ, speed);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid highlight particle type: " + config.get("type"));
+            }
         }
     }
 
