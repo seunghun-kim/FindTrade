@@ -1,8 +1,8 @@
 package org.teamck.findtrade.pathfinding;
 
 import de.bsommerfeld.pathetic.api.pathing.context.EnvironmentContext;
-import de.bsommerfeld.pathetic.api.pathing.processing.NodeValidationProcessor;
-import de.bsommerfeld.pathetic.api.pathing.processing.context.NodeEvaluationContext;
+import de.bsommerfeld.pathetic.api.pathing.processing.ValidationProcessor;
+import de.bsommerfeld.pathetic.api.pathing.processing.context.EvaluationContext;
 import de.bsommerfeld.pathetic.api.provider.NavigationPointProvider;
 import de.bsommerfeld.pathetic.api.wrapper.PathPosition;
 import de.bsommerfeld.pathetic.bukkit.provider.BukkitNavigationPoint;
@@ -15,7 +15,7 @@ import org.bukkit.Tag;
  * 
  * Uses Bukkit's Tag API for reliable material detection across all Minecraft versions.
  */
-public class DoorAwareWalkableProcessor implements NodeValidationProcessor {
+public class DoorAwareWalkableProcessor implements ValidationProcessor {
 
     private final double height;
 
@@ -24,7 +24,7 @@ public class DoorAwareWalkableProcessor implements NodeValidationProcessor {
     }
 
     @Override
-    public boolean isValid(NodeEvaluationContext context) {
+    public boolean isValid(EvaluationContext context) {
         PathPosition pathPosition = context.getCurrentPathPosition();
         PathPosition underPosition = pathPosition.subtract(0, 1, 0);
 

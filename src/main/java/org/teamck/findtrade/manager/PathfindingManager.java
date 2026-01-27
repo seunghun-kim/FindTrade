@@ -61,7 +61,7 @@ public class PathfindingManager {
             PathfinderConfiguration config = PathfinderConfiguration.builder()
                 .provider(new LoadingNavigationPointProvider())  // Bukkit world integration!
                 .async(true)
-                .fallback(true)  // Use fallback if path fails (find closest reachable point)
+                .fallback(true)  // Use fallback if path fails (find the closest reachable point)
                 .maxIterations(100_000)
                 // DoorAwareWalkableProcessor: treats doors, gates, and trapdoors as passable
                 .nodeValidationProcessors(List.of(new DoorAwareWalkableProcessor(2.0)))

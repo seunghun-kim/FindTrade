@@ -1,13 +1,9 @@
 package org.teamck.findtrade.commands;
 
-import com.sk89q.worldedit.IncompleteRegionException;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.Region;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.teamck.findtrade.core.VillagerRegion;
 import org.teamck.findtrade.database.Database;
@@ -86,24 +82,24 @@ public class RegionSubCommand {
         // Use WorldEdit selection
         String name = String.join(" ", args);
         
-        WorldEditPlugin worldEdit = (WorldEditPlugin) plugin.getServer().getPluginManager().getPlugin("WorldEdit");
-        if (worldEdit == null) {
-            player.sendMessage(messageManager.getMessage("region_create_coords_usage", player));
+        Plugin worldEditPlugin = plugin.getServer().getPluginManager().getPlugin("WorldEdit");
+        if (worldEditPlugin == null) {
+            player.sendMessage(messageManager.getMessage("worldedit_not_found", player));
             return true;
         }
 
         try {
-            Region selection = worldEdit.getSession(player).getSelection(BukkitAdapter.adapt(player.getWorld()));
+            // Dynamically load WorldEdit handler only when WorldEdit is present
+            WorldEditHandler handler = new WorldEditHandler((com.sk89q.worldedit.bukkit.WorldEditPlugin) worldEditPlugin);
+            Location[] selection = handler.getSelection(player);
+            
             if (selection == null) {
-                player.sendMessage(messageManager.getMessage("region_create_coords_usage", player));
+                player.sendMessage(messageManager.getMessage("incomplete_selection", player));
                 return true;
             }
 
-            BlockVector3 min = selection.getMinimumPoint();
-            BlockVector3 max = selection.getMaximumPoint();
-
-            Location minLoc = new Location(player.getWorld(), min.x(), min.y(), min.z());
-            Location maxLoc = new Location(player.getWorld(), max.x(), max.y(), max.z());
+            Location minLoc = selection[0];
+            Location maxLoc = selection[1];
 
             int regionId = db.createRegion(name, minLoc, maxLoc);
             if (regionId != -1) {
@@ -111,7 +107,7 @@ public class RegionSubCommand {
             } else {
                 player.sendMessage(messageManager.getMessage("region_creation_failed", player));
             }
-        } catch (IncompleteRegionException e) {
+        } catch (Exception e) {
             player.sendMessage(messageManager.getMessage("incomplete_selection", player));
         }
 

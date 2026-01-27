@@ -140,6 +140,7 @@ public class ParticleManager {
      * 
      * @deprecated Use {@link #spawnParticlesForEntity(UUID, Player, boolean)} for tracking entities
      */
+    @Deprecated
     public void spawnParticles(Location loc, Player player, boolean cancelExisting) {
         if (cancelExisting) {
             cancelAllParticles(player);
