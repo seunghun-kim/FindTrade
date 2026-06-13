@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    id("xyz.jpenilla.run-paper") version "2.3.1"
-    id("com.gradleup.shadow") version "8.3.0"
+    id("xyz.jpenilla.run-paper") version "3.0.2"
+    id("com.gradleup.shadow") version "8.3.10"
 }
 
 group = 'org.teamck'
@@ -28,14 +28,16 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.17")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.69-stable")
+    // WorldEdit 7.4.3: first stable release with Paper 26.1.x support
+    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.4.3")
     // Pathetic core library (https://github.com/bsommerfeld/pathetic)
-    // Using 5.4.0 to match pathetic-bukkit version
-    implementation("de.bsommerfeld.pathetic:api:5.4.2")
-    implementation("de.bsommerfeld.pathetic:engine:5.4.2")
+    implementation("de.bsommerfeld.pathetic:api:5.5.1")
+    implementation("de.bsommerfeld.pathetic:engine:5.5.1")
     // Pathetic Bukkit implementation (https://github.com/bsommerfeld/pathetic-bukkit)
-    implementation("com.github.bsommerfeld.pathetic-bukkit:core:5.4.2")
+    implementation("com.github.bsommerfeld.pathetic-bukkit:core:5.5.1")
+    // Paper-specific provider module (required for Paper 26.1.x support)
+    implementation("com.github.bsommerfeld.pathetic-bukkit:paper:5.5.1")
 }
 
 tasks {
@@ -43,7 +45,7 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.21.11")
+        minecraftVersion("26.1.2")
     }
     
     shadowJar {
@@ -60,22 +62,20 @@ tasks {
     }
 }
 
-def targetJavaVersion = 21
+// Paper 26.1.2 runs on the Java 25 runtime, so target Java 25 bytecode (class file v69).
+def targetJavaVersion = 25
+// JDK used to compile. javac 26 emits Java 25 bytecode via --release, so no JDK 25 install is required.
+def toolchainJavaVersion = 26
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
     targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
+    toolchain.languageVersion = JavaLanguageVersion.of(toolchainJavaVersion)
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release.set(targetJavaVersion)
-    }
+    options.release.set(targetJavaVersion)
 }
 
 processResources {

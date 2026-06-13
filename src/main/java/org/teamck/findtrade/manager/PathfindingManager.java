@@ -115,22 +115,13 @@ public class PathfindingManager {
 
         // Find path with BukkitEnvironmentContext - this provides world info to Pathetic
         pathfinder.findPath(startPos, endPos, new BukkitEnvironmentContext(world))
-            .thenAccept(result -> {
-                // 1. Success - full path found
-                if (result.successful()) {
-                    List<Location> path = convertPathToLocations(result, world);
-                    plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(path));
-                    return;
-                }
-
-                // 2. Pathetic's built-in fallback - closest reachable point
-                if (result.hasFallenBack()) {
-                    List<Location> partialPath = convertPathToLocations(result, world);
-                    plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(partialPath));
-                    return;
-                }
-
-                // 3. Failed - try to find nearest walkable block manually
+            .ifPresent(result -> {
+                // Success or fallback path found - convert and return
+                List<Location> path = convertPathToLocations(result, world);
+                plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(path));
+            })
+            .orElse(result -> {
+                // No path found - try to find nearest walkable block manually
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     Location nearestWalkable = findNearestWalkableBlock(end);
                     if (nearestWalkable != null && !isSameBlock(nearestWalkable, end)) {
@@ -139,12 +130,11 @@ public class PathfindingManager {
                         callback.accept(generateStraightLine(start, end));
                     }
                 });
-
-            }).exceptionally(ex -> {
+            })
+            .exceptionally(ex -> {
                 plugin.getLogger().warning("[Pathfinding] Exception: " + ex.getMessage());
                 plugin.getServer().getScheduler().runTask(plugin, () ->
                     callback.accept(generateStraightLine(start, end)));
-                return null;
             });
     }
 
@@ -217,18 +207,17 @@ public class PathfindingManager {
         PathPosition endPos = BukkitMapper.toPathPosition(walkableTarget);
 
         pathfinder.findPath(startPos, endPos, new BukkitEnvironmentContext(world))
-            .thenAccept(result -> {
-                if (result.successful() || result.hasFallenBack()) {
-                    List<Location> path = convertPathToLocations(result, world);
-                    plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(path));
-                } else {
-                    plugin.getServer().getScheduler().runTask(plugin, () ->
-                        callback.accept(generateStraightLine(start, originalEnd)));
-                }
-            }).exceptionally(ex -> {
+            .ifPresent(result -> {
+                List<Location> path = convertPathToLocations(result, world);
+                plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(path));
+            })
+            .orElse(result -> {
                 plugin.getServer().getScheduler().runTask(plugin, () ->
                     callback.accept(generateStraightLine(start, originalEnd)));
-                return null;
+            })
+            .exceptionally(ex -> {
+                plugin.getServer().getScheduler().runTask(plugin, () ->
+                    callback.accept(generateStraightLine(start, originalEnd)));
             });
     }
 
