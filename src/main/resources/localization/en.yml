@@ -1,5 +1,5 @@
 # On plugin update, if the version differs, your file will be backed up and replaced with the plugin default.
-version: '0.4.0'
+version: '0.5.0'
 
 # General messages
 no_permission: "§cYou don't have permission to use this command."
@@ -9,6 +9,8 @@ click_to_show_particles: "§eClick to show particles at this location"
 no_active_search: "§cNo active search session. Use /findtrade search <enchantment> first."
 particles_off: "§aParticle effects have been turned off."
 no_active_particles: "§7No active particle effects to turn off."
+config_reloaded: "§aFindTrade configuration and localization reloaded."
+reload_failed: "§cFailed to reload configuration. Check the console for details."
 
 # Search command
 search_usage: "§eUsage: /findtrade search <enchantment>"

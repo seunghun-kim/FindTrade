@@ -1,4 +1,4 @@
-version: '0.4.0'
+version: '0.5.0'
 
 # ===========================================
 # Particle Effects Configuration
@@ -68,26 +68,17 @@ particle-effects:
     # Path particle configurations
     # You can specify multiple particle types with different settings
     particles:
-      - type: "ENCHANT"
-        count: 1
+      - type: "ELECTRIC_SPARK"
+        count: 2
         # Position offset from path point (blocks)
         offset-x: 0.5
         offset-y: 0.5
         offset-z: 0.5
         # Random spread for particle spawn position
-        randomness-x: 0.0
-        randomness-y: 0.0
-        randomness-z: 0.0
-        # Particle speed (0.0 = stationary)
-        speed: 0.0
-      - type: "ELECTRIC_SPARK"
-        count: 2
-        offset-x: 0.5
-        offset-y: 0.5
-        offset-z: 0.5
         randomness-x: 0.1
         randomness-y: 0.1
         randomness-z: 0.1
+        # Particle speed (0.0 = stationary)
         speed: 0.02
     
     # ===========================================

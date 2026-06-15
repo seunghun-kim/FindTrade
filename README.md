@@ -66,15 +66,15 @@ particle-effects:
     use-pathfinding: true  # false = straight line (lower server load)
     update-interval: 0.1
     particles:
-      - type: "END_ROD"
-        count: 1
+      - type: "ELECTRIC_SPARK"
+        count: 2
         offset-x: 0.5
         offset-y: 0.5
         offset-z: 0.5
-        randomness-x: 0.0
-        randomness-y: 0.0
-        randomness-z: 0.0
-        speed: 0.0
+        randomness-x: 0.1
+        randomness-y: 0.1
+        randomness-z: 0.1
+        speed: 0.02
 ```
 
 ### Pathfinding
@@ -87,9 +87,11 @@ Language files are located in `plugins/FindTrade/localization/`. Supported langu
 - English (`en.yml`)
 - Korean (`ko.yml`)
 
-## Dependencies
+## Requirements
 
-- **WorldEdit** (optional) - For region selection using WorldEdit wand
+- **Paper** 26.1.x (built and tested against Paper 26.1.2) — runs on the 26.1.x API line
+- **Java** 25 or newer (Paper 26.1.2's runtime)
+- **WorldEdit** (optional) — 7.4.3+ for region selection using the WorldEdit wand
 
 ## Installation
 
@@ -98,6 +100,14 @@ Language files are located in `plugins/FindTrade/localization/`. Supported langu
 3. Restart your server
 
 ## Changelog
+
+### 0.5.0
+- **Minecraft 26.1.x support** — built against Paper 26.1.2, targeting Java 25
+- Updated WorldEdit to 7.4.3 (first stable build with Paper 26.1.x support; still optional)
+- Updated pathfinding library to pathetic 5.5.1
+- Simplified the default path particle to a single `ELECTRIC_SPARK` effect
+- Added `/findtrade reload` to re-read `config.yml` and localization at runtime (requires `findtrade.write`)
+- Build tooling: Gradle 8.14.3
 
 ### 0.4.0
 - **Major refactor**: Consolidated commands into `/findtrade`

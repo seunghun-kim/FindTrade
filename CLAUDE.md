@@ -7,14 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **FindTrade** is a Minecraft Paper plugin that helps players find villagers offering specific enchantment book trades. It displays particle effects to guide players to matching librarians within defined regions.
 
 - Plugin command: `/findtrade` (alias `/ft`)
-- Current version: 0.4.0
+- Current version: 0.5.0
 - Target: Paper 26.1.2 (compiled against `26.1.2.build.69-stable`; `api-version: '26.1'` supports the whole 26.1.x series)
 - Java target: **25** (Paper 26.1.2's runtime, class file v69). Compiled via the JDK 26 toolchain with `--release 25` — do **not** target Java 26 (class v70), the 26.1.2 server's JRE rejects it with `UnsupportedClassVersionError`.
 
 ## Build Commands
 
 ```bash
-./gradlew build          # Build shadowed JAR → build/libs/FindTrade-0.4.0.jar
+./gradlew build          # Build shadowed JAR → build/libs/FindTrade-0.5.0.jar
 ./gradlew runServer      # Start local Paper 26.1.2 test server with plugin loaded
 ./gradlew clean build    # Clean rebuild
 ```

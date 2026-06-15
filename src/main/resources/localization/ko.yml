@@ -1,5 +1,5 @@
 # 플러그인 업데이트 시, 버전이 다르면 기존 파일이 백업되고 플러그인 기본값으로 교체됩니다.
-version: '0.4.0'
+version: '0.5.0'
 
 # General messages
 no_permission: "§c권한이 없습니다."
@@ -9,6 +9,8 @@ click_to_show_particles: "§e클릭하여 이 위치에 파티클 표시"
 no_active_search: "§c활성화된 검색이 없습니다. /findtrade search <인챈트>로 먼저 검색하세요."
 particles_off: "§a파티클 효과가 꺼졌습니다."
 no_active_particles: "§7활성화된 파티클 효과가 없습니다."
+config_reloaded: "§aFindTrade 설정과 언어 파일을 새로고침했습니다."
+reload_failed: "§c설정 새로고침에 실패했습니다. 콘솔 로그를 확인하세요."
 
 # Search command
 search_usage: "§e사용법: /findtrade search <인챈트>"

@@ -38,16 +38,18 @@ import java.util.stream.Collectors;
  * - /findtrade off - Cancel active particle effects
  */
 public class FindTradeCommand implements CommandExecutor, TabCompleter {
+    private final JavaPlugin plugin;
     private final MessageManager messageManager;
     private final ParticleManager particleManager;
     private final Database db;
     private final RegionSubCommand regionSubCommand;
     private final TUISessionManager tuiSessionManager;
-    
+
     private static final double DEFAULT_SEARCH_RADIUS = 50.0;
     private static final List<String> SUBCOMMANDS = Arrays.asList("search", "region", "off");
 
     public FindTradeCommand(JavaPlugin plugin, MessageManager messageManager, Database db, ParticleManager particleManager) {
+        this.plugin = plugin;
         this.messageManager = messageManager;
         this.particleManager = particleManager;
         this.db = db;
@@ -73,6 +75,7 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
             case "region-tui" -> handleRegionTUI(sender, subArgs);
             case "particle" -> handleParticle(sender, subArgs);
             case "off" -> handleOff(sender);
+            case "reload" -> handleReload(sender);
             default -> {
                 sendUsage(sender);
                 yield true;
@@ -85,6 +88,33 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage("§e/findtrade search <enchantment> §7- Search for villagers with enchantment");
         sender.sendMessage("§e/findtrade region §7- Manage regions (TUI)");
         sender.sendMessage("§e/findtrade off §7- Turn off particle effects");
+        if (sender.hasPermission("findtrade.write")) {
+            sender.sendMessage("§e/findtrade reload §7- Reload config & localization");
+        }
+    }
+
+    /**
+     * Handle /findtrade reload - Re-read config.yml and localization files from disk.
+     *
+     * <p>Requires {@code findtrade.write}. Settings are read live, so the reloaded
+     * config applies to new searches immediately; particle effects already running
+     * keep their old settings until they end.
+     */
+    private boolean handleReload(CommandSender sender) {
+        if (!sender.hasPermission("findtrade.write")) {
+            sender.sendMessage(messageManager.getMessage("no_permission", sender));
+            return true;
+        }
+
+        try {
+            plugin.reloadConfig();
+            messageManager.reload();
+            sender.sendMessage(messageManager.getMessage("config_reloaded", sender));
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to reload FindTrade configuration: " + e.getMessage());
+            sender.sendMessage(messageManager.getMessage("reload_failed", sender));
+        }
+        return true;
     }
     
     /**
@@ -416,7 +446,11 @@ public class FindTradeCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            return SUBCOMMANDS.stream()
+            List<String> subCommands = new ArrayList<>(SUBCOMMANDS);
+            if (player.hasPermission("findtrade.write")) {
+                subCommands.add("reload");
+            }
+            return subCommands.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }

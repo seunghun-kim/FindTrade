@@ -36,6 +36,14 @@ public class MessageManager {
         return instance;
     }
 
+    /**
+     * Reload all language files from disk. Used by the /findtrade reload command.
+     */
+    public void reload() {
+        messages.clear();
+        loadLanguages();
+    }
+
     private void loadLanguages() {
         File localizationDir = new File(plugin.getDataFolder(), "localization");
         if (!localizationDir.exists()) {

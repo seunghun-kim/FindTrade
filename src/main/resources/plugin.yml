@@ -1,5 +1,5 @@
 name: FindTrade
-version: '0.4.0'
+version: '0.5.0'
 main: org.teamck.findtrade.core.FindTradePlugin
 api-version: '26.1'
 softdepend: [WorldEdit]
